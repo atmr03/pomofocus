@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pomodoro Focus Timer</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Arial", sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: white;
+      }
+
+      .container {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 40px;
+        text-align: center;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        max-width: 400px;
+        width: 90%;
+      }
+
+      .title {
+        font-size: 2.5em;
+        margin-bottom: 10px;
+        font-weight: bold;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .session-type {
+        font-size: 1.2em;
+        margin-bottom: 30px;
+        opacity: 0.9;
+        font-weight: 500;
+      }
+
+      .timer-display {
+        font-size: 4em;
+        font-weight: bold;
+        margin: 30px 0;
+        text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+        letter-spacing: 2px;
+      }
+
+      .progress-ring {
+        position: relative;
+        margin: 20px auto;
+        width: 200px;
+        height: 200px;
+      }
+
+      .progress-ring svg {
+        width: 100%;
+        height: 100%;
+        transform: rotate(-90deg);
+      }
+
+      .progress-ring-circle {
+        fill: transparent;
+        stroke: rgba(255, 255, 255, 0.2);
+        stroke-width: 8;
+      }
+
+      .progress-ring-progress {
+        fill: transparent;
+        stroke: #ff6b6b;
+        stroke-width: 8;
+        stroke-linecap: round;
+        transition: stroke-dashoffset 1s ease;
+      }
+
+      .timer-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 2.5em;
+        font-weight: bold;
+      }
+
+      .controls {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin: 30px 0;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 25px;
+        font-size: 1em;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: white;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        min-width: 100px;
+      }
+
+      .btn-primary {
+        background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+        box-shadow: 0 4px 15px rgba(238, 90, 82, 0.4);
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(238, 90, 82, 0.6);
+      }
+
+      .btn-secondary {
+        background: linear-gradient(45deg, #4ecdc4, #44a08d);
+        box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4);
+      }
+
+      .btn-secondary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(78, 205, 196, 0.6);
+      }
+
+      .btn-tertiary {
+        background: linear-gradient(45deg, #a8e6cf, #7fcdcd);
+        box-shadow: 0 4px 15px rgba(168, 230, 207, 0.4);
+      }
+
+      .btn-tertiary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(168, 230, 207, 0.6);
+      }
+
+      .stats {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .stat-item {
+        text-align: center;
+        flex: 1;
+      }
+
+      .stat-number {
+        font-size: 1.5em;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+
+      .stat-label {
+        font-size: 0.9em;
+        opacity: 0.8;
+      }
+
+      .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        color: #333;
+        padding: 15px 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        transform: translateX(400px);
+        transition: transform 0.3s ease;
+        font-weight: bold;
+        z-index: 1000;
+      }
+
+      .notification.show {
+        transform: translateX(0);
+      }
+
+      .notification-actions {
+        margin-top: 10px;
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+      }
+
+      .notification-btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 15px;
+        background: #667eea;
+        color: white;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.2s ease;
+      }
+
+      .notification-btn:hover {
+        background: #5a67d8;
+        transform: scale(1.05);
+      }
+
+      .notification-btn.stop {
+        background: #e53e3e;
+      }
+
+      .notification-btn.stop:hover {
+        background: #c53030;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .pulse {
+        animation: pulse 1s infinite;
+      }
+
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        25% {
+          transform: translateX(-5px);
+        }
+        75% {
+          transform: translateX(5px);
+        }
+      }
+
+      .shake {
+        animation: shake 0.5s ease-in-out infinite;
+      }
+
+      .notification-active {
+        background: linear-gradient(45deg, #ff6b6b, #ee5a52) !important;
+        animation: pulse 1s infinite;
+      }
+
+      @media (max-width: 480px) {
+        .container {
+          padding: 20px;
+        }
+
+        .title {
+          font-size: 2em;
+        }
+
+        .timer-display {
+          font-size: 3em;
+        }
+
+        .controls {
+          flex-direction: column;
+          align-items: center;
+        }
+
+        .btn {
+          width: 100%;
+          max-width: 200px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="title">🍅 Pomodoro</h1>
+      <div class="session-type" id="sessionType">Sesi Fokus</div>
+
+      <div class="progress-ring">
+        <svg>
+          <circle
+            class="progress-ring-circle"
+            cx="100"
+            cy="100"
+            r="90"
+          ></circle>
+          <circle
+            class="progress-ring-progress"
+            cx="100"
+            cy="100"
+            r="90"
+            id="progressCircle"
+          ></circle>
+        </svg>
+        <div class="timer-text" id="timerDisplay">25:00</div>
+      </div>
+
+      <div class="controls">
+        <button class="btn btn-primary" id="startBtn">Mulai</button>
+        <button class="btn btn-secondary" id="pauseBtn">Jeda</button>
+        <button class="btn btn-tertiary" id="resetBtn">Reset</button>
+      </div>
+
+      <div class="stats">
+        <div class="stat-item">
+          <div class="stat-number" id="completedPomodoros">0</div>
+          <div class="stat-label">Pomodoro</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="totalMinutes">0</div>
+          <div class="stat-label">Menit</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="currentStreak">0</div>
+          <div class="stat-label">Streak</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="notification" id="notification">
+      <div id="notificationText"></div>
+      <div
+        class="notification-actions"
+        id="notificationActions"
+        style="display: none"
+      >
+        <button
+          class="notification-btn stop"
+          onclick="pomodoro.stopNotification()"
+        >
+          Matikan Suara
+        </button>
+        <button
+          class="notification-btn"
+          onclick="pomodoro.dismissNotification()"
+        >
+          OK
+        </button>
+      </div>
+    </div>
+
+    <script>
+      class PomodoroTimer {
+        constructor() {
+          this.workTime = 25 * 60; // 25 menit dalam detik
+          this.breakTime = 5 * 60; // 5 menit dalam detik
+          this.currentTime = this.workTime;
+          this.isRunning = false;
+          this.isWorkSession = true;
+          this.timer = null;
+          this.completedPomodoros =
+            parseInt(localStorage.getItem("completedPomodoros")) || 0;
+          this.totalMinutes =
+            parseInt(localStorage.getItem("totalMinutes")) || 0;
+          this.currentStreak =
+            parseInt(localStorage.getItem("currentStreak")) || 0;
+          this.notificationInterval = null;
+          this.audioContext = null;
+          this.isNotificationActive = false;
+
+          this.initializeElements();
+          this.updateDisplay();
+          this.updateStats();
+          this.setupProgressRing();
+        }
+
+        initializeElements() {
+          this.timerDisplay = document.getElementById("timerDisplay");
+          this.sessionType = document.getElementById("sessionType");
+          this.startBtn = document.getElementById("startBtn");
+          this.pauseBtn = document.getElementById("pauseBtn");
+          this.resetBtn = document.getElementById("resetBtn");
+          this.notification = document.getElementById("notification");
+          this.notificationText = document.getElementById("notificationText");
+          this.notificationActions = document.getElementById(
+            "notificationActions"
+          );
+          this.progressCircle = document.getElementById("progressCircle");
+          this.completedPomodorosEl =
+            document.getElementById("completedPomodoros");
+          this.totalMinutesEl = document.getElementById("totalMinutes");
+          this.currentStreakEl = document.getElementById("currentStreak");
+
+          this.startBtn.addEventListener("click", () => this.start());
+          this.pauseBtn.addEventListener("click", () => this.pause());
+          this.resetBtn.addEventListener("click", () => this.reset());
+        }
+
+        setupProgressRing() {
+          const radius = 90;
+          const circumference = 2 * Math.PI * radius;
+          this.progressCircle.style.strokeDasharray = circumference;
+          this.progressCircle.style.strokeDashoffset = circumference;
+        }
+
+        updateProgressRing() {
+          const radius = 90;
+          const circumference = 2 * Math.PI * radius;
+          const maxTime = this.isWorkSession ? this.workTime : this.breakTime;
+          const progress = (maxTime - this.currentTime) / maxTime;
+          const offset = circumference - progress * circumference;
+          this.progressCircle.style.strokeDashoffset = offset;
+
+          // Ubah warna berdasarkan sesi
+          if (this.isWorkSession) {
+            this.progressCircle.style.stroke = "#ff6b6b";
+          } else {
+            this.progressCircle.style.stroke = "#4ecdc4";
+          }
+        }
+
+        formatTime(seconds) {
+          const minutes = Math.floor(seconds / 60);
+          const remainingSeconds = seconds % 60;
+          return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
+            .toString()
+            .padStart(2, "0")}`;
+        }
+
+        updateDisplay() {
+          this.timerDisplay.textContent = this.formatTime(this.currentTime);
+          this.sessionType.textContent = this.isWorkSession
+            ? "Sesi Fokus"
+            : "Istirahat";
+          this.updateProgressRing();
+
+          // Update document title
+          document.title = `${this.formatTime(this.currentTime)} - ${
+            this.isWorkSession ? "Fokus" : "Istirahat"
+          }`;
+        }
+
+        updateStats() {
+          this.completedPomodorosEl.textContent = this.completedPomodoros;
+          this.totalMinutesEl.textContent = this.totalMinutes;
+          this.currentStreakEl.textContent = this.currentStreak;
+        }
+
+        saveStats() {
+          localStorage.setItem(
+            "completedPomodoros",
+            this.completedPomodoros.toString()
+          );
+          localStorage.setItem("totalMinutes", this.totalMinutes.toString());
+          localStorage.setItem("currentStreak", this.currentStreak.toString());
+        }
+
+        showNotification(message) {
+          this.notificationText.textContent = message;
+          this.notificationActions.style.display = "flex";
+          this.notification.classList.add("show", "notification-active");
+          this.isNotificationActive = true;
+
+          // Mulai suara notifikasi berulang
+          this.startNotificationSound();
+
+          // Shake effect pada container
+          document.querySelector(".container").classList.add("shake");
+        }
+
+        startNotificationSound() {
+          if (this.notificationInterval) return;
+
+          this.playComplexNotificationSound();
+          this.notificationInterval = setInterval(() => {
+            if (this.isNotificationActive) {
+              this.playComplexNotificationSound();
+            }
+          }, 2000); // Ulangi setiap 2 detik
+        }
+
+        stopNotification() {
+          this.isNotificationActive = false;
+          if (this.notificationInterval) {
+            clearInterval(this.notificationInterval);
+            this.notificationInterval = null;
+          }
+          if (this.audioContext) {
+            this.audioContext.close();
+            this.audioContext = null;
+          }
+          document.querySelector(".container").classList.remove("shake");
+        }
+
+        dismissNotification() {
+          this.stopNotification();
+          this.notification.classList.remove("show", "notification-active");
+          this.notificationActions.style.display = "none";
+        }
+
+        playComplexNotificationSound() {
+          try {
+            this.audioContext = new (window.AudioContext ||
+              window.webkitAudioContext)();
+
+            // Membuat melodi notifikasi yang kompleks dan menarik
+            const notes = [
+              { freq: 523.25, time: 0, duration: 0.2 }, // C5
+              { freq: 659.25, time: 0.2, duration: 0.2 }, // E5
+              { freq: 783.99, time: 0.4, duration: 0.2 }, // G5
+              { freq: 1046.5, time: 0.6, duration: 0.3 }, // C6
+              { freq: 783.99, time: 0.9, duration: 0.2 }, // G5
+              { freq: 1046.5, time: 1.1, duration: 0.4 }, // C6
+            ];
+
+            notes.forEach((note) => {
+              setTimeout(() => {
+                if (!this.isNotificationActive) return;
+
+                const oscillator = this.audioContext.createOscillator();
+                const gainNode = this.audioContext.createGain();
+                const filter = this.audioContext.createBiquadFilter();
+
+                oscillator.connect(filter);
+                filter.connect(gainNode);
+                gainNode.connect(this.audioContext.destination);
+
+                // Setup oscillator
+                oscillator.type = "sine";
+                oscillator.frequency.setValueAtTime(
+                  note.freq,
+                  this.audioContext.currentTime
+                );
+
+                // Add some vibrato
+                const lfo = this.audioContext.createOscillator();
+                const lfoGain = this.audioContext.createGain();
+                lfo.frequency.setValueAtTime(5, this.audioContext.currentTime);
+                lfoGain.gain.setValueAtTime(10, this.audioContext.currentTime);
+                lfo.connect(lfoGain);
+                lfoGain.connect(oscillator.frequency);
+
+                // Setup filter for warmer sound
+                filter.type = "lowpass";
+                filter.frequency.setValueAtTime(
+                  2000,
+                  this.audioContext.currentTime
+                );
+                filter.Q.setValueAtTime(1, this.audioContext.currentTime);
+
+                // Setup envelope
+                gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(
+                  0.3,
+                  this.audioContext.currentTime + 0.05
+                );
+                gainNode.gain.exponentialRampToValueAtTime(
+                  0.1,
+                  this.audioContext.currentTime + note.duration * 0.7
+                );
+                gainNode.gain.exponentialRampToValueAtTime(
+                  0.001,
+                  this.audioContext.currentTime + note.duration
+                );
+
+                oscillator.start(this.audioContext.currentTime);
+                lfo.start(this.audioContext.currentTime);
+                oscillator.stop(this.audioContext.currentTime + note.duration);
+                lfo.stop(this.audioContext.currentTime + note.duration);
+              }, note.time * 1000);
+            });
+          } catch (error) {
+            console.log("Audio tidak didukung:", error);
+          }
+        }
+
+        playNotificationSound() {
+          // Fungsi ini diganti dengan playComplexNotificationSound
+          this.playComplexNotificationSound();
+        }
+
+        start() {
+          if (!this.isRunning) {
+            this.isRunning = true;
+            this.startBtn.textContent = "Berjalan...";
+            this.timer = setInterval(() => {
+              this.currentTime--;
+              this.updateDisplay();
+
+              if (this.currentTime <= 0) {
+                this.sessionComplete();
+              }
+            }, 1000);
+          }
+        }
+
+        pause() {
+          if (this.isRunning) {
+            this.isRunning = false;
+            clearInterval(this.timer);
+            this.startBtn.textContent = "Lanjutkan";
+          } else if (this.currentTime > 0) {
+            this.start();
+          }
+        }
+
+        reset() {
+          this.isRunning = false;
+          clearInterval(this.timer);
+          this.currentTime = this.isWorkSession
+            ? this.workTime
+            : this.breakTime;
+          this.startBtn.textContent = "Mulai";
+          this.updateDisplay();
+        }
+
+        sessionComplete() {
+          this.isRunning = false;
+          clearInterval(this.timer);
+
+          if (this.isWorkSession) {
+            // Sesi kerja selesai
+            this.completedPomodoros++;
+            this.totalMinutes += 25;
+            this.currentStreak++;
+            this.showNotification("🎉 Sesi fokus selesai! Waktunya istirahat.");
+            this.isWorkSession = false;
+            this.currentTime = this.breakTime;
+          } else {
+            // Sesi istirahat selesai
+            this.totalMinutes += 5;
+            this.showNotification(
+              "⚡ Istirahat selesai! Siap untuk sesi fokus berikutnya?"
+            );
+            this.isWorkSession = true;
+            this.currentTime = this.workTime;
+          }
+
+          this.saveStats();
+          this.updateStats();
+          this.updateDisplay();
+          this.startBtn.textContent = "Mulai";
+
+          // Tambahkan efek pulse
+          document.querySelector(".container").classList.add("pulse");
+          setTimeout(() => {
+            document.querySelector(".container").classList.remove("pulse");
+          }, 1000);
+        }
+      }
+
+      // Inisialisasi aplikasi
+      let pomodoro;
+      document.addEventListener("DOMContentLoaded", () => {
+        pomodoro = new PomodoroTimer();
+      });
+
+      // Mencegah tab menjadi tidak aktif mempengaruhi timer
+      let hidden, visibilityChange;
+      if (typeof document.hidden !== "undefined") {
+        hidden = "hidden";
+        visibilityChange = "visibilitychange";
+      } else if (typeof document.msHidden !== "undefined") {
+        hidden = "msHidden";
+        visibilityChange = "msvisibilitychange";
+      } else if (typeof document.webkitHidden !== "undefined") {
+        hidden = "webkitHidden";
+        visibilityChange = "webkitvisibilitychange";
+      }
+
+      // Request notification permission
+      if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission();
+      }
+    </script>
+  </body>
+</html>
